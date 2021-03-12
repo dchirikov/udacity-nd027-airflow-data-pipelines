@@ -14,11 +14,14 @@ start-airflow:
     	-v ./.airflow:/root/airflow \
 		--security-opt label=disable \
 		-v ./dags:/root/airflow/dags \
+		-v ./plugins:/root/airflow/plugins \
 		--name airflow \
 		-v ./scripts:/scripts \
 		--entrypoint /scripts/entrypoint.sh \
 		-p 3000:3000 \
 		-e AIRFLOW__CORE__LOAD_EXAMPLES=False \
+		-e AWS_KEY \
+		-e AWS_SECRET \
 		apache/airflow:v1-10-stable-python3.6-build
 
 stop-airflow:

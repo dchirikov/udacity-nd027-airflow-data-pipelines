@@ -3,22 +3,35 @@ import os
 from airflow import DAG
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators import (StageToRedshiftOperator, LoadFactOperator,
-                                LoadDimensionOperator, DataQualityOperator)
+                               LoadDimensionOperator, DataQualityOperator)
 from helpers import SqlQueries
 
-# AWS_KEY = os.environ.get('AWS_KEY')
-# AWS_SECRET = os.environ.get('AWS_SECRET')
+AWS_KEY = os.environ.get('AWS_KEY')
+AWS_SECRET = os.environ.get('AWS_SECRET')
 
 default_args = {
     'owner': 'udacity',
     'start_date': datetime(2019, 1, 12),
+    # The DAG does not have dependencies on past runs
+    'depends_on_past': False,
+    # On failure, the task are retried 3 times
+    'retries': 3,
+    # Retries happen every 5 minutes
+    'retry_delay': timedelta(minutes=5),
+    # Catchup is turned off
+    'catchup': False,
+    # Do not email on retry
+    'email_on_retry': False,
+
+    'email_on_failure': False,
 }
 
-dag = DAG('udac_example_dag',
-          default_args=default_args,
-          description='Load and transform data in Redshift with Airflow',
-          schedule_interval='0 * * * *'
-        )
+dag = DAG(
+    'udac_example_dag',
+    default_args=default_args,
+    description='Load and transform data in Redshift with Airflow',
+    schedule_interval='0 * * * *'
+)
 
 start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
 
@@ -63,3 +76,22 @@ run_quality_checks = DataQualityOperator(
 )
 
 end_operator = DummyOperator(task_id='Stop_execution',  dag=dag)
+
+
+start_operator >> stage_events_to_redshift
+start_operator >> stage_songs_to_redshift
+
+stage_events_to_redshift >> load_songplays_table
+stage_songs_to_redshift >> load_songplays_table
+
+load_songplays_table >> load_user_dimension_table
+load_songplays_table >> load_song_dimension_table
+load_songplays_table >> load_artist_dimension_table
+load_songplays_table >> load_time_dimension_table
+
+load_user_dimension_table >> run_quality_checks
+load_song_dimension_table >> run_quality_checks
+load_artist_dimension_table >> run_quality_checks
+load_time_dimension_table >> run_quality_checks
+
+run_quality_checks >> end_operator
