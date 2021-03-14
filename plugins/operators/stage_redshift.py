@@ -1,26 +1,31 @@
 from airflow.hooks.postgres_hook import PostgresHook
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
+from airflow.contrib.hooks.aws_hook import AwsHook
 
 class StageToRedshiftOperator(BaseOperator):
     ui_color = '#358140'
 
     @apply_defaults
     def __init__(self,
-                 # Define your operators params (with defaults) here
-                 # Example:
-                 # redshift_conn_id=your-connection-name
-                 *args, **kwargs):
+                *args,
+                 redshift_conn_id,
+                 drop_query,
+                 create_query,
+                 insert_query,
+                 **kwargs):
 
         super(StageToRedshiftOperator, self).__init__(*args, **kwargs)
-        # Map params here
-        # Example:
-        # self.conn_id = conn_id
+        self.redshift_conn_id = redshift_conn_id
+        self.drop_query = drop_query
+        self.create_query = create_query
+        self.insert_query = insert_query
 
     def execute(self, context):
-        self.log.info('StageToRedshiftOperator not implemented yet')
 
-
-
-
-
+        aws_hook = AwsHook(self.aws_credentials)
+        credentials = aws_hook.get_credentials()
+        redshift_hook = PostgresHook(self.redshift_conn_id)
+        redshift_hook.run(self.drop_query)
+        redshift_hook.run(self.create_query)
+        redshift_hook.run(self.insert_query)

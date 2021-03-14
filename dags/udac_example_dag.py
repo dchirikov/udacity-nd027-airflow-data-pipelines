@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import os
 from airflow import DAG
+from airflow.models import Variable
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators import (StageToRedshiftOperator, LoadFactOperator,
                                LoadDimensionOperator, DataQualityOperator)
@@ -37,12 +38,36 @@ start_operator = DummyOperator(task_id='Begin_execution',  dag=dag)
 
 stage_events_to_redshift = StageToRedshiftOperator(
     task_id='Stage_events',
-    dag=dag
+    dag=dag,
+    redshift_conn_id="redshift",
+    drop_query=SqlQueries.drop_query.format(
+        table="staging_events"
+    ),
+    create_query=SqlQueries.staging_events_table_create.format(
+        table="staging_events"
+    ),
+    insert_query=SqlQueries.staging_insert_query.format(
+        table="staging_events",
+        bucket="s3://udacity-dend/log_data",
+        arn=Variable.get("redshift_s3_ro_role")
+    )
 )
 
 stage_songs_to_redshift = StageToRedshiftOperator(
     task_id='Stage_songs',
-    dag=dag
+    dag=dag,
+    redshift_conn_id="redshift",
+    drop_query=SqlQueries.drop_query.format(
+        table="staging_songs"
+    ),
+    create_query=SqlQueries.staging_songs_table_create.format(
+        table="staging_songs"
+    ),
+    insert_query=SqlQueries.staging_insert_query.format(
+        table="staging_songs",
+        bucket="s3://udacity-dend/song_data",
+        arn=Variable.get("redshift_s3_ro_role")
+    )
 )
 
 load_songplays_table = LoadFactOperator(
