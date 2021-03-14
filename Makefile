@@ -7,8 +7,10 @@ createenv:
 	pip3.6 install numpy==1.18.5   # otherwise pandas won't compile
 	pip3.6 install apache-airflow[postgres,aws]==1.10.12
 
+.ONESHELL:
 start-airflow:
 	mkdir -p .airflow
+	source ./env.vars
 	podman \
 		run -itd \
     	-v ./.airflow:/root/airflow \
@@ -20,8 +22,12 @@ start-airflow:
 		--entrypoint /scripts/entrypoint.sh \
 		-p 3000:3000 \
 		-e AIRFLOW__CORE__LOAD_EXAMPLES=False \
-		-e AWS_KEY \
-		-e AWS_SECRET \
+		-e REDSHIFT_S3_RO_ROLE \
+		-e DB_LOGIN \
+		-e DB_PASSWORD \
+		-e DB_HOST \
+		-e DB_PORT \
+		-e DB_NAME \
 		apache/airflow:v1-10-stable-python3.6-build
 
 stop-airflow:
