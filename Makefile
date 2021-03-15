@@ -28,6 +28,8 @@ start-airflow:
 		-e DB_HOST \
 		-e DB_PORT \
 		-e DB_NAME \
+		-e LOG_BUCKET \
+		-e SONG_BUCKET \
 		apache/airflow:v1-10-stable-python3.6-build
 
 stop-airflow:
