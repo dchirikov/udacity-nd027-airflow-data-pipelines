@@ -1,3 +1,10 @@
+# Try to use podman if available
+ifeq ($(shell type podman >/dev/null 2>&1; echo $$?),0)
+DOCKER_CMD = podman
+else
+DOCKER_CMD = docker
+endif
+
 .ONESHELL:
 createenv:
 	set -auxo pipefail
@@ -11,7 +18,7 @@ createenv:
 start-airflow:
 	mkdir -p .airflow
 	source ./env.vars
-	podman \
+	$(DOCKER_CMD) \
 		run -itd \
     	-v ./.airflow:/root/airflow \
 		--security-opt label=disable \
@@ -33,7 +40,7 @@ start-airflow:
 		apache/airflow:v1-10-stable-python3.6-build
 
 stop-airflow:
-	podman rm -f airflow
+	$(DOCKER_CMD) rm -f airflow
 	rm -f .airflow/*.pid
 
 restart-airflow: stop-airflow start-airflow
