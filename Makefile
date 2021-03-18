@@ -22,13 +22,14 @@ start-airflow:
 		run -itd \
     	-v ./.airflow:/root/airflow \
 		--security-opt label=disable \
-		-v ./dags:/root/airflow/dags \
-		-v ./plugins:/root/airflow/plugins \
+		-v ./dags:/opt/airflow/dags \
+		-v ./plugins:/opt/airflow/plugins \
 		--name airflow \
 		-v ./scripts:/scripts \
 		--entrypoint /scripts/entrypoint.sh \
 		-p 3000:3000 \
 		-e AIRFLOW__CORE__LOAD_EXAMPLES=False \
+		-e PYTHONPATH=/opt/airflow/plugins \
 		-e REDSHIFT_S3_RO_ROLE \
 		-e DB_LOGIN \
 		-e DB_PASSWORD \
@@ -37,7 +38,7 @@ start-airflow:
 		-e DB_NAME \
 		-e LOG_BUCKET \
 		-e SONG_BUCKET \
-		apache/airflow:v1-10-stable-python3.6-build
+		apache/airflow:1.10.15-python3.6
 
 stop-airflow:
 	$(DOCKER_CMD) rm -f airflow
@@ -46,7 +47,7 @@ stop-airflow:
 restart-airflow: stop-airflow start-airflow
 
 clean-airflow: stop-airflow
-	rm -rf .airflow
+	rm -rf .airflow .pgdata
 
 .ONESHELL:
 pep8: createenv

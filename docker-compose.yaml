@@ -1,0 +1,50 @@
+version: "3.8"
+services:
+  db:
+    security_opt:
+    - label=disable
+    image: postgres:9.6.21-alpine
+    restart: always
+    ports:
+    - 5432:5432
+    volumes:
+    - type: bind
+      source: ./.pgdata
+      target: /data
+    - type: bind
+      source: ./scripts/sql
+      target: /docker-entrypoint-initdb.d
+    environment:
+      PGDATA: /data
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+    networks:
+    - net
+  airflow:
+    security_opt:
+    - label=disable
+    depends_on:
+      - db
+    image: apache/airflow:1.10.15-python3.6
+    ports:
+    - 3000:3000
+    volumes:
+    - type: bind
+      source: ./dags
+      target: /opt/airflow/dags
+    - type: bind
+      source: ./plugins
+      target: /opt/airflow/plugins
+    - type: bind
+      source: ./scripts
+      target: /scripts
+    entrypoint: /scripts/entrypoint.sh
+    env_file: ./env.vars
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: False
+      PYTHONPATH: /opt/airflow/plugins
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: 'postgresql+psycopg2://airflow_user:airflow_user@localhost:5432/airflow_db'
+    networks:
+    - net
+networks:
+  net: {}

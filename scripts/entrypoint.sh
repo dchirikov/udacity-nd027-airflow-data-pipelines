@@ -2,8 +2,8 @@
 
 set -ex
 
-# Initialise SQLite DB
-[ -f /root/airflow/airflow.db ] || airflow initdb
+# Initialise DB
+airflow db init
 
 # add redshift connection
 airflow connections add \
@@ -11,8 +11,8 @@ airflow connections add \
     --conn-type 'postgres' \
     --conn-login "${DB_LOGIN}" \
     --conn-password "${DB_PASSWORD}" \
-    --conn-host "${DB_HOST}" \
-    --conn-port "${DB_PORT}" \
+    --conn-host ${DB_HOST} \
+    --conn-port ${DB_PORT} \
     --conn-schema "${DB_NAME}"
 
 # add role variable
