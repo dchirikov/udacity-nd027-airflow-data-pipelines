@@ -1,4 +1,4 @@
-version: "3.8"
+version: "3.3"
 services:
   db:
     security_opt:
@@ -6,16 +6,17 @@ services:
     image: postgres:9.6.21-alpine
     restart: always
     ports:
-    - 5432:5432
+    - 15432:15432
     volumes:
     - type: bind
-      source: ./.pgdata
+      source: ./.pg/data
       target: /data
     - type: bind
       source: ./scripts/sql
       target: /docker-entrypoint-initdb.d
     environment:
       PGDATA: /data
+      PGPORT: 15432
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password
     networks:
@@ -23,6 +24,10 @@ services:
   airflow:
     security_opt:
     - label=disable
+    sysctls:
+    - net.ipv4.tcp_keepalive_time=90
+    - net.ipv4.tcp_keepalive_intvl=90
+    - net.ipv4.tcp_keepalive_probes=180
     depends_on:
       - db
     image: apache/airflow:1.10.15-python3.6
@@ -41,9 +46,10 @@ services:
     entrypoint: /scripts/entrypoint.sh
     env_file: ./env.vars
     environment:
-      AIRFLOW__CORE__LOAD_EXAMPLES: False
-      PYTHONPATH: /opt/airflow/plugins
-      AIRFLOW__CORE__SQL_ALCHEMY_CONN: 'postgresql+psycopg2://airflow_user:airflow_user@localhost:5432/airflow_db'
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'False'
+      PYTHONPATH: '/opt/airflow/plugins'
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: 'postgresql+psycopg2://airflow_user:airflow_user@db:15432/airflow_db'
+      AIRFLOW__CORE__EXECUTOR: 'LocalExecutor'
     networks:
     - net
 networks:

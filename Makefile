@@ -1,8 +1,10 @@
 # Try to use podman if available
 ifeq ($(shell type podman >/dev/null 2>&1; echo $$?),0)
 DOCKER_CMD = podman
+COMPOSE_CMD = podman-compose
 else
 DOCKER_CMD = docker
+COMPOSE_CMD = docker-compose
 endif
 
 .ONESHELL:
@@ -16,38 +18,22 @@ createenv:
 
 .ONESHELL:
 start-airflow:
-	mkdir -p .airflow
-	source ./env.vars
-	$(DOCKER_CMD) \
-		run -itd \
-    	-v ./.airflow:/root/airflow \
-		--security-opt label=disable \
-		-v ./dags:/opt/airflow/dags \
-		-v ./plugins:/opt/airflow/plugins \
-		--name airflow \
-		-v ./scripts:/scripts \
-		--entrypoint /scripts/entrypoint.sh \
-		-p 3000:3000 \
-		-e AIRFLOW__CORE__LOAD_EXAMPLES=False \
-		-e PYTHONPATH=/opt/airflow/plugins \
-		-e REDSHIFT_S3_RO_ROLE \
-		-e DB_LOGIN \
-		-e DB_PASSWORD \
-		-e DB_HOST \
-		-e DB_PORT \
-		-e DB_NAME \
-		-e LOG_BUCKET \
-		-e SONG_BUCKET \
-		apache/airflow:1.10.15-python3.6
+	mkdir -p .pg/data
+	$(COMPOSE_CMD) up -d
 
 stop-airflow:
-	$(DOCKER_CMD) rm -f airflow
-	rm -f .airflow/*.pid
+	$(COMPOSE_CMD) down
 
 restart-airflow: stop-airflow start-airflow
 
 clean-airflow: stop-airflow
-	rm -rf .airflow .pgdata
+	$(DOCKER_CMD) run \
+		--security-opt label=disable \
+		--rm \
+		-v $$(pwd)/.pg:/rm \
+		busybox \
+		/bin/sh -c 'rm -rf /rm/data'
+	rm -rf .pg
 
 .ONESHELL:
 pep8: createenv
