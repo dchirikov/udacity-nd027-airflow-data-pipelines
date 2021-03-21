@@ -76,7 +76,8 @@ class SqlQueries:
                 events.sessionid,
                 events.location,
                 events.useragent
-                FROM (SELECT TIMESTAMP 'epoch' + ts/1000 * interval '1 second' AS start_time, *
+                FROM (SELECT TIMESTAMP 'epoch' + ts/1000 * interval '1 second'
+                    AS start_time, *
             FROM {staging_events_table}
             WHERE page='NextSong') events
             LEFT JOIN {staging_songs_table} songs

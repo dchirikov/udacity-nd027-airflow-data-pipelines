@@ -39,8 +39,9 @@ clean-airflow: stop-airflow
 pep8: createenv
 	source ./.venv/bin/activate
 	pip3.6 install flake8 pylint
-	flake8 dags/*.py
-	pylint dags/*.py
+	export PYTHONPATH=$$(pwd)/plugins:$${PYTHONPATH}
+	flake8 dags/*.py plugins
+	pylint --disable=C0114,C0115,C0116,R0903,W0104 dags/*.py plugins
 
 .ONESHELL:
 test: createenv

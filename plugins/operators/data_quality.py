@@ -18,7 +18,7 @@ class DataQualityOperator(BaseOperator):
                  time_table,
                  **kwargs):
 
-        super(DataQualityOperator, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.redshift_conn_id = redshift_conn_id
         self.songlplays_table = songlplays_table
         self.songs_table = songs_table
